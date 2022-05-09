@@ -1,20 +1,55 @@
 import React from "react";
 
-function Header(props) {
-  const timerHeaderString = JSON.stringify(props.timeHeader);
+const Header = ({
+  user,
+  timeHeader,
+  popupClick,
+  taskOnChange,
+  newTaskCategory,
+  newTaskTypeClick,
+}) => {
+  const timerHeaderString = JSON.stringify(timeHeader);
   return (
     <header className="App-header">
       {timerHeaderString.length === 2 ? (
         <div className="header">
-          <button onClick={props.popupClick}>UTWÓRZ NOWE ZADANIE</button>
+          {user === "pm" ? (
+            <>
+              <div>
+                <button onClick={newTaskTypeClick}>
+                  UTWÓRZ NOWĄ KATEGORIE ZADANIA
+                </button>
+                <input
+                  id="taskType"
+                  value={newTaskCategory}
+                  onChange={(e) => taskOnChange(e)}
+                ></input>
+              </div>
+              <button onClick={popupClick}>UTWÓRZ NOWE ZADANIE</button>
+            </>
+          ) : null}
           <p className="timerDate">--.--.----</p>
           <p className="timerClock">--:--</p>
         </div>
       ) : (
-        props.timeHeader.map((time, index) => {
+        timeHeader.map((time, index) => {
           return (
             <div className="header" key={index}>
-              <button onClick={props.popupClick}>UTWÓRZ NOWE ZADANIE</button>
+              {user === "pm" ? (
+                <>
+                  <div>
+                    <button onClick={newTaskTypeClick}>
+                      UTWÓRZ NOWĄ KATEGORIE ZADANIA
+                    </button>
+                    <input
+                      id="taskType"
+                      value={newTaskCategory}
+                      onChange={(e) => taskOnChange(e)}
+                    ></input>
+                  </div>
+                  <button onClick={popupClick}>UTWÓRZ NOWE ZADANIE</button>
+                </>
+              ) : null}
               <p className="timerDate">{time.date.replaceAll("-", ".")}</p>
               <p className="timerClock">
                 {time.hours > 1 ? time.hours : `0${time.hours}`}:
@@ -26,6 +61,6 @@ function Header(props) {
       )}
     </header>
   );
-}
+};
 
 export default Header;

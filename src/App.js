@@ -3,18 +3,64 @@ import React, { useState, useEffect } from "react";
 import TaskList from "./components/TaskList";
 import Header from "./components/Header";
 import { clock } from "./scripts/timer";
+import { getDatabase, ref, onValue, update, push } from "firebase/database";
+import { app } from "./resources/Firebase";
+import UserAdd from "./components/UserAdd";
 
 function App() {
-  const [taskList, setList] = useState([
-    { id: "1", title: "title", desc: "desc", value: "toexeccute" },
-    { id: "2", title: "title", desc: "desc", value: "toexeccute" },
-    { id: "3", title: "title", desc: "desc", value: "toexeccute" },
-  ]);
+  const [taskList, setList] = useState(() => {
+    if (localStorage.getItem("tasks")) {
+      return JSON.parse(localStorage.getItem("tasks")).taskList;
+    } else return [];
+  });
 
+  const db = getDatabase(app);
   const [title, setTitle] = useState("");
   const [desc, setDesc] = useState("");
   const [timer, setTime] = useState([]);
   const [show, setShow] = useState(false);
+  const [user, setUser] = useState("");
+  const [newTaskCategory, setNewTaskCategory] = useState("");
+  var array = null;
+  const [newTaskCategoryArray, setNewTaskCategoryArray] = useState(() => {
+    onValue(ref(db), (snapshot) => {
+      const data = snapshot.val();
+      array = data;
+      console.log(array);
+    });
+    if (array.TaskCategory !== undefined) {
+      return array.TaskCategory;
+    } else return [];
+  });
+
+  useEffect(() => {
+    onValue(ref(db), (snapshot) => {
+      const data = snapshot.val();
+      const key = "-N1dBs0tl5D4npgLW6wE";
+      setUser(data[key].values.userType);
+      // setNewTaskCategoryArray(data.TaskCategory);
+    });
+  }, [db]);
+
+  useEffect(() => {
+    update(ref(db), {
+      TaskCategory: newTaskCategoryArray,
+    });
+  }, [newTaskCategoryArray]);
+
+  const newTaskTypeClick = () => {
+    setNewTaskCategoryArray((prevState) => [...prevState, newTaskCategory]);
+    // update(ref(db), {
+    //   TaskType: { [newTaskCategory]: newTaskCategory },
+    // });
+  };
+
+  useEffect(() => {
+    update(ref(db), {
+      TaskCategory: newTaskCategoryArray,
+    });
+  }, [db]);
+
   const taskTitle = "taskTitle";
   const taskDescription = "taskDescription";
 
@@ -28,15 +74,21 @@ function App() {
   }, []);
 
   const handleOnChange = (e) => {
-    const inputType = e.target.id;
-    if (inputType === taskTitle) {
-      const userInput = e.target.value;
+    const inputID = e.target.id;
+    console.log(inputID);
+    const userInput = e.target.value;
+    if (inputID === taskTitle) {
       setTitle(userInput);
-    } else if (inputType === taskDescription) {
-      const userInput = e.target.value;
+    } else if (inputID === taskDescription) {
       setDesc(userInput);
-    } else return;
+    } else if (inputID === "taskType") {
+      setNewTaskCategory(userInput);
+    } else return [];
   };
+
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify({ taskList }));
+  }, [taskList]);
 
   const handleAddTask = () => {
     if (title !== "" && title.length < 14 && desc !== "") {
@@ -56,7 +108,9 @@ function App() {
     } else if (desc === "") {
       alert("Pole opis zadania jest wymagane");
     } else if (title.length > 14) {
-      alert("Pole tytułu zadania jest za może zawierać maksymalnie 14 znaków");
+      alert(
+        "Pole tytułu zadania jest za długie może zawierać maksymalnie 14 znaków"
+      );
     } else return;
   };
 
@@ -80,7 +134,15 @@ function App() {
 
   return (
     <div className="App">
-      <Header timeHeader={timer} popupClick={() => handleTaskPopupOpen()} />
+      <Header
+        timeHeader={timer}
+        user={user}
+        newTaskCategory={newTaskCategory}
+        newTaskTypeClick={() => newTaskTypeClick()}
+        taskOnChange={(e) => handleOnChange(e)}
+        popupClick={() => handleTaskPopupOpen()}
+      />
+      {user === "admin" ? <UserAdd /> : null}
       <div
         className="containerInputs"
         style={{
@@ -117,8 +179,10 @@ function App() {
         </div>
       </div>
       <TaskList
+        handleOnChange={(e) => handleOnChange(e)}
         changeTaskStatus={(e, id) => handleStatusChange(e, id)}
         tasks={taskList}
+        newTaskCategoryArray={newTaskCategoryArray}
       />
     </div>
   );

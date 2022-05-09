@@ -9,6 +9,11 @@ function TaskList(props) {
         <div className="taskCard" key={task.id}>
           <h1>{task.title}</h1>
           <p>{task.desc}</p>
+          <select id="tasks" onChange={props.handleOnChange}>
+            {props.newTaskCategoryArray.map((task) => (
+              <option value={task}>{task}</option>
+            ))}
+          </select>
           <select
             className="custom-select"
             value={task.value}
